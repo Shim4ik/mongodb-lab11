@@ -1,64 +1,27 @@
-const Room = require('../models/Room');
-const AppError = require('../utils/AppError');
+const catchAsync = require('../utils/catchAsync');
+const roomService = require('../services/roomService');
 
-// GET /api/rooms — отримати всі кімнати (публічний)
-exports.getAllRooms = async (req, res, next) => {
-    try {
-        const rooms = await Room.find().populate('createdBy', 'name email');
-        res.status(200).json({ success: true, count: rooms.length, data:
-            rooms });
-    } catch (err) {
-        next(err);
-    }
-};
+exports.getAllRooms = catchAsync(async (req, res) => {
+    const result = await roomService.getAllRooms(req.query);
+    res.status(200).json({ success: true, ...result });
+});
 
-// GET /api/rooms/:id — отримати одну кімнату (публічний)
-exports.getRoom = async (req, res, next) => {
-    try {
-        const room = await
-            Room.findById(req.params.id).populate('createdBy', 'name');
-        if (!room) return next(new AppError('Room not found', 404));
-        res.status(200).json({ success: true, data: room });
-    } catch (err) {
-        next(err);
-    }
-};
+exports.getRoom = catchAsync(async (req, res) => {
+    const room = await roomService.getRoomById(req.params.id);
+    res.status(200).json({ success: true, data: room });
+});
 
-// POST /api/rooms — створити кімнату (тільки авторизований)
-exports.createRoom = async (req, res, next) => {
-    try {
-        const room = await Room.create({
-            ...req.body,
-            createdBy: req.user._id
-        });
-        res.status(201).json({ success: true, data: room });
-    } catch (err) {
-        next(err);
-    }
-};
+exports.createRoom = catchAsync(async (req, res) => {
+    const room = await roomService.createRoom(req.body, req.user._id);
+    res.status(201).json({ success: true, data: room });
+});
 
-// PUT /api/rooms/:id — оновити кімнату (тільки авторизований)
-exports.updateRoom = async (req, res, next) => {
-    try {
-        const room = await Room.findByIdAndUpdate(
-            req.params.id,
-            req.body,
-            { new: true, runValidators: true }
-        );
-        if (!room) return next(new AppError('Room not found', 404));
-        res.status(200).json({ success: true, data: room });
-    } catch (err) {
-        next(err);
-    }
-};
+exports.updateRoom = catchAsync(async (req, res) => {
+    const room = await roomService.updateRoom(req.params.id, req.body, req.user);
+    res.status(200).json({ success: true, data: room });
+});
 
-// DELETE /api/rooms/:id — видалити кімнату (тільки admin)
-exports.deleteRoom = async (req, res, next) => {
-    try {
-        const room = await Room.findByIdAndDelete(req.params.id);
-        if (!room) return next(new AppError('Room not found', 404));
-        res.status(200).json({ success: true, message: 'Room deleted' });
-    } catch (err) {
-        next(err);
-    }
-};
+exports.deleteRoom = catchAsync(async (req, res) => {
+    await roomService.deleteRoom(req.params.id);
+    res.status(200).json({ success: true, message: 'Room deleted' });
+});
