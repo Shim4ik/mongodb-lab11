@@ -305,6 +305,14 @@
         body: JSON.stringify(body)
       });
       const data = await res.json();
+
+      if (res.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login.html';
+        return;
+      }
+
       if (!res.ok) { document.getElementById('editMsg').textContent = data.message; return; }
       document.getElementById('editOverlay').classList.remove('open');
       loadRooms();
