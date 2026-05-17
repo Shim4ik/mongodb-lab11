@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Додати кімнату — Hotelux</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Raleway:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<nav>
+  <a href="/index.html" class="nav-logo">HOTE<span>LUX</span></a>
+  <div class="nav-links">
+    <a href="/index.html">Усі кімнати</a>
+    <span class="nav-user--create" id="navUser"></span>
+    <a href="#" id="logoutLink">Вийти</a>
+  </div>
+</nav>
+
+<main class="create-main">
+  <div class="page-header">
+    <div class="page-label">Управління номерами</div>
+    <h1 class="page-title">Додати кімнату</h1>
+  </div>
+
+  <div class="card">
+    <form id="createForm">
+      <div class="row">
+        <div class="field">
+          <label for="number">Номер кімнати</label>
+          <input type="text" id="number" placeholder="напр. 101" required>
+        </div>
+        <div class="field">
+          <label for="type">Тип</label>
+          <div class="select-wrap">
+            <select id="type" required>
+              <option value="" disabled selected>Оберіть тип</option>
+              <option value="single">Single</option>
+              <option value="double">Double</option>
+              <option value="suite">Suite</option>
+              <option value="deluxe">Deluxe</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label for="price">Ціна за ніч ($)</label>
+          <input type="number" id="price" placeholder="0.00" min="0" step="0.01" required>
+        </div>
+        <div class="field">
+          <label for="capacity">Місткість (осіб)</label>
+          <input type="number" id="capacity" placeholder="1–10" min="1" max="10" required>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Доступність</label>
+        <div class="toggle-field">
+          <span class="toggle-label-text">Кімната доступна для бронювання</span>
+          <label class="toggle">
+            <input type="checkbox" id="available" checked>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="actions">
+        <a href="/index.html" class="btn btn-secondary" style="display:flex;align-items:center;justify-content:center;text-decoration:none;">Скасувати</a>
+        <button type="submit" class="btn btn-primary" id="submitBtn"><span>Додати кімнату</span></button>
+      </div>
+    </form>
+
+    <p id="message" class="message"></p>
+  </div>
+</main>
+
+<script>
+  // Auth guard
+  const token = localStorage.getItem('token');
+  if (!token) window.location.href = '/login.html';
+
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  if (user.name) document.getElementById('navUser').textContent = user.name;
+
+  document.getElementById('logoutLink').addEventListener('click', (e) => {
+    e.preventDefault();
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = '/login.html';
+  });
+
+  document.getElementById('createForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById('message');
+    const btn = document.getElementById('submitBtn');
+    msg.textContent = '';
+    msg.className = 'message';
+    btn.disabled = true;
+
+    const body = {
+      number: document.getElementById('number').value.trim(),
+      type: document.getElementById('type').value,
+      price: Number(document.getElementById('price').value),
+      capacity: Number(document.getElementById('capacity').value),
+      available: document.getElementById('available').checked
+    };
+
+    try {
+      const response = await fetch('/api/rooms', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(body)
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        msg.textContent = data.message || 'Помилка при додаванні';
+        btn.disabled = false;
+        return;
+      }
+
+      msg.className = 'message success';
+      msg.textContent = 'Кімнату успішно додано!';
+      setTimeout(() => window.location.href = '/index.html', 1000);
+    } catch {
+      msg.textContent = 'Помилка з\'єднання з сервером';
+      btn.disabled = false;
+    }
+  });
+</script>
+
+</body>
+</html>

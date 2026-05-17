@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Вхід — Hotelux</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Raleway:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="auth-page">
+
+<div class="panel">
+  <div class="panel-lines"></div>
+  <div class="corner corner--tl"></div>
+  <div class="corner corner--br"></div>
+  <div class="panel-content">
+    <div class="panel-logo">HOTE<span>LUX</span></div>
+    <div class="panel-tagline">Premium Room Booking</div>
+    <div class="panel-divider"></div>
+    <p class="panel-quote">Кожен простір — це досвід. Кожне перебування — це спогад.</p>
+  </div>
+</div>
+
+<div class="form-side">
+  <div class="form-wrapper">
+    <h1 class="form-heading">Вхід до акаунту</h1>
+    <p class="form-sub">Ще не маєте акаунту? <a href="/register.html">Зареєструватися</a></p>
+
+    <form id="loginForm">
+      <div class="field">
+        <label for="email">Email</label>
+        <input type="email" id="email" placeholder="your@email.com" required>
+      </div>
+      <div class="field">
+        <label for="password">Пароль</label>
+        <input type="password" id="password" placeholder="••••••••" required>
+      </div>
+      <button type="submit" class="btn btn-primary"><span>Увійти</span></button>
+    </form>
+
+    <p id="message" class="message center"></p>
+  </div>
+</div>
+
+<script>
+  document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById('message');
+    msg.textContent = '';
+    msg.className = 'message center';
+
+    const body = {
+      email: document.getElementById('email').value,
+      password: document.getElementById('password').value
+    };
+
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        msg.textContent = data.message || 'Помилка входу';
+        return;
+      }
+
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      msg.className = 'message center success';
+      msg.textContent = 'Вхід успішний…';
+      setTimeout(() => window.location.href = '/index.html', 800);
+    } catch {
+      msg.textContent = 'Помилка з\'єднання з сервером';
+    }
+  });
+</script>
+
+</body>
+</html>

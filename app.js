@@ -4,14 +4,18 @@ const connectDB = require('./config/database');
 const authRoutes = require('./routes/authRoutes');
 const roomRoutes = require('./routes/roomRoutes');
 const AppError = require('./utils/AppError');
+
 const app = express();
 
 // Підключення до бази даних
 connectDB();
+
 app.use(express.json());
+app.use(express.static('public'));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/rooms', roomRoutes);
+
 
 // Головна сторінка
 app.get('/', (req, res) => {
@@ -41,6 +45,7 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 3000;
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
