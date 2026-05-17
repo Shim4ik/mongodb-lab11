@@ -866,6 +866,8 @@ input::placeholder { color: #b0a898; }
   border: none;
   cursor: pointer;
   transition: background 0.2s;
+  position: relative;
+  overflow: hidden;
 }
 
 .modal-actions .btn-primary:hover { background: var(--gold); color: var(--dark); }
