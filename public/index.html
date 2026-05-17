@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Кімнати — Hotelux</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Raleway:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<nav>
+  <a href="/index.html" class="nav-logo">HOTE<span>LUX</span></a>
+  <div class="nav-right">
+    <span class="nav-user" id="navUser"></span>
+    <span class="nav-badge" id="navRole" style="display:none"></span>
+    <a href="/create.html" class="nav-link primary" id="addRoomLink" style="display:none">+ Додати кімнату</a>
+    <a href="/login.html" class="nav-link" id="loginLink">Увійти</a>
+    <a href="#" class="nav-link" id="logoutLink" style="display:none">Вийти</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="hero-inner">
+    <div class="hero-label">Hotelux · Каталог номерів</div>
+    <h1 class="hero-title">Усі кімнати</h1>
+    <p class="hero-subtitle">Перегляд та управління готельним фондом</p>
+  </div>
+</div>
+
+<div class="filters-bar">
+  <div class="filters-inner">
+    <button class="filter-btn active" data-type="">Усі типи</button>
+    <div class="filter-sep"></div>
+    <button class="filter-btn" data-type="single">Single</button>
+    <button class="filter-btn" data-type="double">Double</button>
+    <button class="filter-btn" data-type="suite">Suite</button>
+    <button class="filter-btn" data-type="deluxe">Deluxe</button>
+    <div class="avail-toggle">
+      <input type="checkbox" id="availFilter">
+      <label for="availFilter">Лише доступні</label>
+    </div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="content-header">
+    <span class="content-count" id="countLabel"></span>
+  </div>
+  <div id="roomsGrid" class="rooms-grid"></div>
+  <div id="pagination" class="pagination"></div>
+</div>
+
+<!-- Edit Modal -->
+<div class="overlay" id="editOverlay">
+  <div class="modal">
+    <h2 class="modal-title">Редагувати кімнату</h2>
+    <input type="hidden" id="editId">
+    <div class="field">
+      <label>Номер кімнати</label>
+      <input type="text" id="editNumber">
+    </div>
+    <div class="field">
+      <label>Тип</label>
+      <select id="editType">
+        <option value="single">Single</option>
+        <option value="double">Double</option>
+        <option value="suite">Suite</option>
+        <option value="deluxe">Deluxe</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Ціна ($)</label>
+      <input type="number" id="editPrice" min="0" step="0.01">
+    </div>
+    <div class="field">
+      <label>Місткість</label>
+      <input type="number" id="editCapacity" min="1" max="10">
+    </div>
+    <div class="field">
+      <label>Доступність</label>
+      <select id="editAvailable">
+        <option value="true">Доступна</option>
+        <option value="false">Недоступна</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="closeModal">Скасувати</button>
+      <button class="btn-primary" id="saveEdit">Зберегти</button>
+    </div>
+    <p class="modal-msg" id="editMsg"></p>
+  </div>
+</div>
+
+<script>
+  // ── Auth state ──────────────────────────────────────────────
+  const token = localStorage.getItem('token');
+  const currentUser = JSON.parse(localStorage.getItem('user') || 'null');
+
+  if (currentUser) {
+    document.getElementById('navUser').textContent = currentUser.name;
+    document.getElementById('loginLink').style.display = 'none';
+    document.getElementById('logoutLink').style.display = 'inline';
+    document.getElementById('addRoomLink').style.display = 'inline';
+    const roleEl = document.getElementById('navRole');
+    if (currentUser.role === 'admin') {
+      roleEl.textContent = 'Admin';
+      roleEl.style.display = 'inline';
+    }
+  }
+
+  document.getElementById('logoutLink').addEventListener('click', (e) => {
+    e.preventDefault();
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.reload();
+  });
+
+  // ── State ────────────────────────────────────────────────────
+  let currentPage = 1;
+  let currentType = '';
+  let currentAvail = false;
+
+  // ── Filters ──────────────────────────────────────────────────
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentType = btn.dataset.type;
+      currentPage = 1;
+      loadRooms();
+    });
+  });
+
+  document.getElementById('availFilter').addEventListener('change', (e) => {
+    currentAvail = e.target.checked;
+    currentPage = 1;
+    loadRooms();
+  });
+
+  // ── Load rooms ───────────────────────────────────────────────
+  async function loadRooms() {
+    const grid = document.getElementById('roomsGrid');
+    grid.innerHTML = `<div class="state-msg" style="grid-column:1/-1"><div class="icon">⌛</div><p>Завантаження…</p></div>`;
+
+    let url = `/api/rooms?page=${currentPage}&limit=9`;
+    if (currentType) url += `&type=${currentType}`;
+    if (currentAvail) url += `&available=true`;
+
+    try {
+      const res = await fetch(url);
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.message);
+
+      const { data: rooms, pagination } = data;
+
+      document.getElementById('countLabel').textContent =
+        `${pagination.total} кімнат · сторінка ${pagination.page} з ${pagination.pages}`;
+
+      if (rooms.length === 0) {
+        grid.innerHTML = `<div class="state-msg" style="grid-column:1/-1"><div class="icon">🛏</div><p>Кімнати не знайдено</p></div>`;
+        document.getElementById('pagination').innerHTML = '';
+        return;
+      }
+
+      grid.innerHTML = rooms.map((r, i) => roomCard(r, i)).join('');
+      renderPagination(pagination);
+
+      // Events
+      grid.querySelectorAll('.btn-delete').forEach(btn => {
+        btn.addEventListener('click', () => deleteRoom(btn.dataset.id));
+      });
+      grid.querySelectorAll('.btn-edit').forEach(btn => {
+        btn.addEventListener('click', () => openEdit(btn.dataset.id));
+      });
+    } catch (err) {
+      grid.innerHTML = `<div class="state-msg" style="grid-column:1/-1"><div class="icon">⚠️</div><p>${err.message || 'Помилка завантаження'}</p></div>`;
+    }
+  }
+
+  function roomCard(r, i) {
+    const canEdit  = currentUser && (currentUser.id === r.createdBy?._id || currentUser.role === 'admin');
+    const canDelete = currentUser && currentUser.role === 'admin';
+    const avail = r.available
+      ? `<span class="avail-pill yes">Доступна</span>`
+      : `<span class="avail-pill no">Зайнята</span>`;
+
+    const actions = (canEdit || canDelete) ? `
+      <div class="room-actions">
+        ${canEdit  ? `<button class="btn-sm btn-edit"   data-id="${r._id}">Ред.</button>` : ''}
+        ${canDelete ? `<button class="btn-sm btn-delete" data-id="${r._id}">Видалити</button>` : ''}
+      </div>` : '';
+
+    return `
+      <div class="room-card" style="animation-delay:${i * 0.05}s">
+        <div class="room-card-top">
+          <div class="room-number">
+            №${r.number}
+            <br><small>Room</small>
+          </div>
+          <span class="room-type-badge">${r.type}</span>
+        </div>
+        <div class="room-divider"></div>
+        <div class="room-meta">
+          <div class="room-meta-item">
+            <span class="room-meta-label">Ціна / ніч</span>
+            <span class="room-meta-value room-price"><sup>$</sup>${r.price}</span>
+          </div>
+          <div class="room-meta-item">
+            <span class="room-meta-label">Місткість</span>
+            <span class="room-meta-value">${r.capacity} ос.</span>
+          </div>
+          <div class="room-meta-item" style="grid-column:1/-1">
+            <span class="room-meta-label">Статус</span>
+            ${avail}
+          </div>
+        </div>
+        <div class="room-divider"></div>
+        <div class="room-footer">
+          <span class="room-by">${r.createdBy?.name ? `Додав: ${r.createdBy.name}` : ''}</span>
+          ${actions}
+        </div>
+      </div>`;
+  }
+
+  function renderPagination({ page, pages }) {
+    const el = document.getElementById('pagination');
+    if (pages <= 1) { el.innerHTML = ''; return; }
+
+    let html = `<button class="page-btn" ${page === 1 ? 'disabled' : ''} onclick="goPage(${page-1})">←</button>`;
+    for (let p = 1; p <= pages; p++) {
+      html += `<button class="page-btn ${p === page ? 'active' : ''}" onclick="goPage(${p})">${p}</button>`;
+    }
+    html += `<button class="page-btn" ${page === pages ? 'disabled' : ''} onclick="goPage(${page+1})">→</button>`;
+    el.innerHTML = html;
+  }
+
+  function goPage(p) {
+    currentPage = p;
+    loadRooms();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // ── Delete ───────────────────────────────────────────────────
+  async function deleteRoom(id) {
+    if (!confirm('Видалити цю кімнату?')) return;
+    try {
+      const res = await fetch(`/api/rooms/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (!res.ok) { alert(data.message); return; }
+      loadRooms();
+    } catch { alert('Помилка видалення'); }
+  }
+
+  // ── Edit Modal ───────────────────────────────────────────────
+  let editingRoom = null;
+
+  async function openEdit(id) {
+    try {
+      const res = await fetch(`/api/rooms/${id}`);
+      const data = await res.json();
+      if (!res.ok) { alert(data.message); return; }
+      editingRoom = data.data;
+      document.getElementById('editId').value = editingRoom._id;
+      document.getElementById('editNumber').value = editingRoom.number;
+      document.getElementById('editType').value = editingRoom.type;
+      document.getElementById('editPrice').value = editingRoom.price;
+      document.getElementById('editCapacity').value = editingRoom.capacity;
+      document.getElementById('editAvailable').value = String(editingRoom.available);
+      document.getElementById('editMsg').textContent = '';
+      document.getElementById('editOverlay').classList.add('open');
+    } catch { alert('Помилка завантаження кімнати'); }
+  }
+
+  document.getElementById('closeModal').addEventListener('click', () => {
+    document.getElementById('editOverlay').classList.remove('open');
+  });
+
+  document.getElementById('editOverlay').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('editOverlay'))
+      document.getElementById('editOverlay').classList.remove('open');
+  });
+
+  document.getElementById('saveEdit').addEventListener('click', async () => {
+    const id = document.getElementById('editId').value;
+    const body = {
+      number: document.getElementById('editNumber').value,
+      type: document.getElementById('editType').value,
+      price: Number(document.getElementById('editPrice').value),
+      capacity: Number(document.getElementById('editCapacity').value),
+      available: document.getElementById('editAvailable').value === 'true'
+    };
+
+    try {
+      const res = await fetch(`/api/rooms/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json();
+      if (!res.ok) { document.getElementById('editMsg').textContent = data.message; return; }
+      document.getElementById('editOverlay').classList.remove('open');
+      loadRooms();
+    } catch { document.getElementById('editMsg').textContent = 'Помилка збереження'; }
+  });
+
+  // ── Init ─────────────────────────────────────────────────────
+  loadRooms();
+</script>
+
+</body>
+</html>
