@@ -1,5 +1,7 @@
 require('dotenv').config();
 const express = require('express');
+const cors = require('cors');
+const cookieParser = require('cookie-parser');
 const connectDB = require('./config/database');
 const authRoutes = require('./routes/authRoutes');
 const roomRoutes = require('./routes/roomRoutes');
@@ -7,10 +9,30 @@ const AppError = require('./utils/AppError');
 
 const app = express();
 
+app.use(cors({
+  origin: (origin, callback) => {
+    const allowed = [
+      process.env.CLIENT_URL,
+      'http://localhost:5500',
+      'http://127.0.0.1:5500',
+      'http://localhost:3000',
+      'http://127.0.0.1:3000'
+    ].filter(Boolean);
+
+    if (!origin || allowed.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error(`CORS: origin ${origin} not allowed`));
+    }
+  },
+  credentials: true
+}));
+
 // Підключення до бази даних
 connectDB();
 
 app.use(express.json());
+app.use(cookieParser());
 app.use(express.static('public'));
 
 app.use('/api/auth', authRoutes);

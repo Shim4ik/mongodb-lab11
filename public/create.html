@@ -80,16 +80,20 @@
 </main>
 
 <script>
-  // Auth guard
-  const token = localStorage.getItem('token');
-  if (!token) window.location.href = '/login.html';
+  const API_URL = 'http://localhost:3000';
 
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
-  if (user.name) document.getElementById('navUser').textContent = user.name;
+  // Auth guard — перевіряємо наявність даних користувача
+  const user = JSON.parse(localStorage.getItem('user') || 'null');
+  if (!user) window.location.href = '/login.html';
 
-  document.getElementById('logoutLink').addEventListener('click', (e) => {
+  if (user?.name) document.getElementById('navUser').textContent = user.name;
+
+  document.getElementById('logoutLink').addEventListener('click', async (e) => {
     e.preventDefault();
-    localStorage.removeItem('token');
+    await fetch(`${API_URL}/api/auth/logout`, {
+      method: 'POST',
+      credentials: 'include'
+    });
     localStorage.removeItem('user');
     window.location.href = '/login.html';
   });
@@ -111,16 +115,20 @@
     };
 
     try {
-      const response = await fetch('/api/rooms', {
+      const response = await fetch(`${API_URL}/api/rooms`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
       });
 
       const data = await response.json();
+
+      if (response.status === 401) {
+        localStorage.removeItem('user');
+        window.location.href = '/login.html';
+        return;
+      }
 
       if (!response.ok) {
         msg.textContent = data.message || 'Помилка при додаванні';

@@ -93,8 +93,9 @@
 </div>
 
 <script>
+  const API_URL = 'http://localhost:3000';
+
   // ── Auth state ──────────────────────────────────────────────
-  const token = localStorage.getItem('token');
   const currentUser = JSON.parse(localStorage.getItem('user') || 'null');
 
   if (currentUser) {
@@ -109,9 +110,12 @@
     }
   }
 
-  document.getElementById('logoutLink').addEventListener('click', (e) => {
+  document.getElementById('logoutLink').addEventListener('click', async (e) => {
     e.preventDefault();
-    localStorage.removeItem('token');
+    await fetch(`${API_URL}/api/auth/logout`, {
+      method: 'POST',
+      credentials: 'include'
+    });
     localStorage.removeItem('user');
     window.location.reload();
   });
@@ -143,12 +147,12 @@
     const grid = document.getElementById('roomsGrid');
     grid.innerHTML = `<div class="state-msg" style="grid-column:1/-1"><div class="icon">⌛</div><p>Завантаження…</p></div>`;
 
-    let url = `/api/rooms?page=${currentPage}&limit=9`;
+    let url = `${API_URL}/api/rooms?page=${currentPage}&limit=9`;
     if (currentType) url += `&type=${currentType}`;
     if (currentAvail) url += `&available=true`;
 
     try {
-      const res = await fetch(url);
+      const res = await fetch(url, { credentials: 'include' });
       const data = await res.json();
 
       if (!res.ok) throw new Error(data.message);
@@ -246,9 +250,9 @@
   async function deleteRoom(id) {
     if (!confirm('Видалити цю кімнату?')) return;
     try {
-      const res = await fetch(`/api/rooms/${id}`, {
+      const res = await fetch(`${API_URL}/api/rooms/${id}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include'
       });
       const data = await res.json();
       if (!res.ok) { alert(data.message); return; }
@@ -261,7 +265,7 @@
 
   async function openEdit(id) {
     try {
-      const res = await fetch(`/api/rooms/${id}`);
+      const res = await fetch(`${API_URL}/api/rooms/${id}`, { credentials: 'include' });
       const data = await res.json();
       if (!res.ok) { alert(data.message); return; }
       editingRoom = data.data;
@@ -296,18 +300,15 @@
     };
 
     try {
-      const res = await fetch(`/api/rooms/${id}`, {
+      const res = await fetch(`${API_URL}/api/rooms/${id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
       });
       const data = await res.json();
 
       if (res.status === 401) {
-        localStorage.removeItem('token');
         localStorage.removeItem('user');
         window.location.href = '/login.html';
         return;
