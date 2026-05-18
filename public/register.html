@@ -64,6 +64,8 @@
 </div>
 
 <script>
+  const API_URL = 'http://localhost:3000';
+
   document.getElementById('registerForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const msg = document.getElementById('message');
@@ -78,8 +80,9 @@
     };
 
     try {
-      const response = await fetch('/api/auth/register', {
+      const response = await fetch(`${API_URL}/api/auth/register`, {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
       });
@@ -91,7 +94,7 @@
         return;
       }
 
-      localStorage.setItem('token', data.token);
+      // Зберігаємо лише дані користувача (не токен — він у cookie)
       localStorage.setItem('user', JSON.stringify(data.user));
       msg.className = 'message center success';
       msg.textContent = 'Реєстрація успішна!';

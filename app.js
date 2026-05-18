@@ -14,7 +14,9 @@ app.use(cors({
     const allowed = [
       process.env.CLIENT_URL,
       'http://localhost:5500',
-      'http://127.0.0.1:5500'
+      'http://127.0.0.1:5500',
+      'http://localhost:3000',
+      'http://127.0.0.1:3000'
     ].filter(Boolean);
 
     if (!origin || allowed.includes(origin)) {
