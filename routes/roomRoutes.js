@@ -11,11 +11,14 @@ const {
     updateRoom,
     deleteRoom
 } = require('../controllers/roomController');
+const bookingRouter = require('./bookingRoutes');
 
 router.get('/', getAllRooms);
 router.get('/:id', getRoom);
 router.post('/', protect, validate(createRoomSchema), createRoom);
 router.put('/:id', protect, updateRoom);
 router.delete('/:id', protect, restrictTo('admin'), deleteRoom);
+
+router.use('/:roomId/bookings', bookingRouter);
 
 module.exports = router;
