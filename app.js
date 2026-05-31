@@ -6,6 +6,7 @@ const connectDB = require('./config/database');
 const authRoutes = require('./routes/authRoutes');
 const roomRoutes = require('./routes/roomRoutes');
 const AppError = require('./utils/AppError');
+require('./utils/cronJobs');
 
 const app = express();
 
@@ -69,5 +70,5 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Server running on port http://localhost:${PORT}`);
 });
