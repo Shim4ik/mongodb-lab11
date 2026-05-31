@@ -5,6 +5,7 @@ const cookieParser = require('cookie-parser');
 const connectDB = require('./config/database');
 const authRoutes = require('./routes/authRoutes');
 const roomRoutes = require('./routes/roomRoutes');
+const healthRoutes = require('./routes/healthRoutes');
 const AppError = require('./utils/AppError');
 require('./utils/cronJobs');
 
@@ -38,6 +39,7 @@ app.use(express.static('public'));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/rooms', roomRoutes);
+app.use('/api', healthRoutes);
 
 
 // Головна сторінка
