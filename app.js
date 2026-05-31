@@ -15,6 +15,7 @@ app.use(cors({
   origin: (origin, callback) => {
     const allowed = [
       process.env.CLIENT_URL,
+      'https://hotelux.onrender.com',
       'http://localhost:5500',
       'http://127.0.0.1:5500',
       'http://localhost:3000',
