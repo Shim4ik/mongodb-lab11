@@ -160,7 +160,7 @@
       const { data: rooms, pagination } = data;
 
       document.getElementById('countLabel').textContent =
-        `${pagination.total} кімнат · сторінка ${pagination.page} з ${pagination.pages}`;
+              `${pagination.total} кімнат · сторінка ${pagination.page} з ${pagination.pages}`;
 
       if (rooms.length === 0) {
         grid.innerHTML = `<div class="state-msg" style="grid-column:1/-1"><div class="icon">🛏</div><p>Кімнати не знайдено</p></div>`;
@@ -187,14 +187,10 @@
     const canEdit  = currentUser && (currentUser.id === r.createdBy?._id || currentUser.role === 'admin');
     const canDelete = currentUser && currentUser.role === 'admin';
     const avail = r.available
-      ? `<span class="avail-pill yes">Доступна</span>`
-      : `<span class="avail-pill no">Зайнята</span>`;
+            ? `<span class="avail-pill yes">Доступна</span>`
+            : `<span class="avail-pill no">Зайнята</span>`;
 
-    const actions = (canEdit || canDelete) ? `
-      <div class="room-actions">
-        ${canEdit  ? `<button class="btn-sm btn-edit"   data-id="${r._id}">Ред.</button>` : ''}
-        ${canDelete ? `<button class="btn-sm btn-delete" data-id="${r._id}">Видалити</button>` : ''}
-      </div>` : '';
+    // actions inlined in footer below
 
     return `
       <div class="room-card" style="animation-delay:${i * 0.05}s">
@@ -223,7 +219,11 @@
         <div class="room-divider"></div>
         <div class="room-footer">
           <span class="room-by">${r.createdBy?.name ? `Додав: ${r.createdBy.name}` : ''}</span>
-          ${actions}
+          <div style="display:flex;align-items:center;gap:8px;">
+            ${r.available ? `<a href="/booking.html?roomId=${r._id}" class="btn-book">Забронювати</a>` : ''}
+            ${canEdit  ? `<button class="btn-sm btn-edit"   data-id="${r._id}">Ред.</button>` : ''}
+            ${canDelete ? `<button class="btn-sm btn-delete" data-id="${r._id}">Видалити</button>` : ''}
+          </div>
         </div>
       </div>`;
   }
