@@ -39,44 +39,170 @@
     <h1 class="form-heading">Реєстрація</h1>
     <p class="form-sub">Вже маєте акаунт? <a href="/login.html">Увійти</a></p>
 
+    <!-- Server-side errors block -->
+    <div id="serverErrors"></div>
+
     <form id="registerForm">
       <div class="field">
         <label for="name">Ім'я</label>
         <input type="text" id="name" placeholder="Ваше ім'я" required>
+        <span class="field-error" id="nameError"></span>
       </div>
       <div class="field">
         <label for="email">Email</label>
         <input type="email" id="email" placeholder="your@email.com" required>
+        <span class="field-error" id="emailError"></span>
       </div>
       <div class="field">
         <label for="password">Пароль</label>
         <input type="password" id="password" placeholder="Мінімум 8 символів" required>
+        <span class="field-error" id="passwordError"></span>
       </div>
       <div class="field">
         <label for="confirmPassword">Підтвердіть пароль</label>
         <input type="password" id="confirmPassword" placeholder="••••••••" required>
+        <span class="field-error" id="confirmError"></span>
       </div>
-      <button type="submit" class="btn btn-primary"><span>Зареєструватися</span></button>
+      <button type="submit" class="btn btn-primary" id="submitBtn" disabled><span>Зареєструватися</span></button>
     </form>
 
     <p id="message" class="message center"></p>
   </div>
 </div>
 
+<style>
+  .field-error {
+    display: block;
+    font-size: 11px;
+    color: var(--error);
+    margin-top: 5px;
+    min-height: 16px;
+    letter-spacing: 0.02em;
+  }
+  .form-side input.input-error {
+    border-color: var(--error);
+    box-shadow: 0 0 0 3px rgba(192,57,43,0.08);
+  }
+  .form-side input.input-valid {
+    border-color: #4caf50;
+    box-shadow: 0 0 0 3px rgba(76,175,80,0.08);
+  }
+  #serverErrors {
+    margin-bottom: 18px;
+  }
+  .server-error-item {
+    font-size: 12px;
+    color: var(--error);
+    padding: 10px 14px;
+    background: rgba(192,57,43,0.06);
+    border-left: 3px solid var(--error);
+    margin-bottom: 6px;
+    letter-spacing: 0.02em;
+  }
+  .btn.btn-primary:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  .btn.btn-primary:disabled:hover {
+    background: var(--dark);
+    color: var(--cream);
+  }
+</style>
+
 <script>
   const API_URL = 'http://localhost:3000';
 
+  const nameInput     = document.getElementById('name');
+  const emailInput    = document.getElementById('email');
+  const passwordInput = document.getElementById('password');
+  const confirmInput  = document.getElementById('confirmPassword');
+  const submitBtn     = document.getElementById('submitBtn');
+
+  // ── Helpers ──────────────────────────────────────────────────
+  function setError(inputEl, errorId, message) {
+    inputEl.classList.add('input-error');
+    inputEl.classList.remove('input-valid');
+    document.getElementById(errorId).textContent = message;
+  }
+
+  function setValid(inputEl, errorId) {
+    inputEl.classList.remove('input-error');
+    inputEl.classList.add('input-valid');
+    document.getElementById(errorId).textContent = '';
+  }
+
+  function clearState(inputEl, errorId) {
+    inputEl.classList.remove('input-error', 'input-valid');
+    document.getElementById(errorId).textContent = '';
+  }
+
+  // ── Per-field validators ─────────────────────────────────────
+  function validateName() {
+    if (!nameInput.value) { clearState(nameInput, 'nameError'); return false; }
+    if (nameInput.value.trim().length < 2) {
+      setError(nameInput, 'nameError', 'Мінімум 2 символи');
+      return false;
+    }
+    setValid(nameInput, 'nameError');
+    return true;
+  }
+
+  function validateEmail() {
+    if (!emailInput.value) { clearState(emailInput, 'emailError'); return false; }
+    const ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInput.value);
+    if (!ok) { setError(emailInput, 'emailError', 'Некоректний email'); return false; }
+    setValid(emailInput, 'emailError');
+    return true;
+  }
+
+  function validatePassword() {
+    if (!passwordInput.value) { clearState(passwordInput, 'passwordError'); return false; }
+    if (passwordInput.value.length < 8) {
+      setError(passwordInput, 'passwordError', 'Мінімум 8 символів');
+      return false;
+    }
+    setValid(passwordInput, 'passwordError');
+    // Re-check confirm when password changes
+    if (confirmInput.value) validateConfirm();
+    return true;
+  }
+
+  function validateConfirm() {
+    if (!confirmInput.value) { clearState(confirmInput, 'confirmError'); return false; }
+    if (confirmInput.value !== passwordInput.value) {
+      setError(confirmInput, 'confirmError', 'Паролі не збігаються');
+      return false;
+    }
+    setValid(confirmInput, 'confirmError');
+    return true;
+  }
+
+  // ── Enable/disable submit ─────────────────────────────────────
+  function updateSubmit() {
+    const allValid = validateName() && validateEmail() && validatePassword() && validateConfirm();
+    submitBtn.disabled = !allValid;
+  }
+
+  nameInput.addEventListener('input',     () => { validateName();    updateSubmit(); });
+  emailInput.addEventListener('input',    () => { validateEmail();   updateSubmit(); });
+  passwordInput.addEventListener('input', () => { validatePassword(); updateSubmit(); });
+  confirmInput.addEventListener('input',  () => { validateConfirm(); updateSubmit(); });
+
+  // ── Submit ───────────────────────────────────────────────────
   document.getElementById('registerForm').addEventListener('submit', async (e) => {
     e.preventDefault();
+
     const msg = document.getElementById('message');
+    const serverErrors = document.getElementById('serverErrors');
     msg.textContent = '';
     msg.className = 'message center';
+    serverErrors.innerHTML = '';
 
     const body = {
-      name: document.getElementById('name').value,
-      email: document.getElementById('email').value,
-      password: document.getElementById('password').value,
-      confirmPassword: document.getElementById('confirmPassword').value
+      name: nameInput.value.trim(),
+      email: emailInput.value,
+      password: passwordInput.value,
+      confirmPassword: confirmInput.value
     };
 
     try {
@@ -90,17 +216,20 @@
       const data = await response.json();
 
       if (!response.ok) {
-        msg.textContent = data.message || 'Помилка реєстрації';
+        // Display joi array errors or single message above the form
+        const messages = data.errors || [data.message || 'Помилка реєстрації'];
+        serverErrors.innerHTML = messages
+                .map(m => `<div class="server-error-item">${m}</div>`)
+                .join('');
         return;
       }
 
-      // Зберігаємо лише дані користувача (не токен — він у cookie)
       localStorage.setItem('user', JSON.stringify(data.user));
       msg.className = 'message center success';
       msg.textContent = 'Реєстрація успішна!';
       setTimeout(() => window.location.href = '/index.html', 800);
     } catch {
-      msg.textContent = 'Помилка з\'єднання з сервером';
+      serverErrors.innerHTML = `<div class="server-error-item">Помилка з'єднання з сервером</div>`;
     }
   });
 </script>

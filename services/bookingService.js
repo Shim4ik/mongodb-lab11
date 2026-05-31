@@ -1,4 +1,5 @@
 const Booking = require('../models/booking');
+const Room = require('../models/room');
 const AppError = require('../utils/AppError');
 
 exports.getBookingsByRoom = async (roomId) => {
@@ -7,8 +8,14 @@ exports.getBookingsByRoom = async (roomId) => {
 };
 
 exports.createBooking = async (data, roomId, userId) => {
+    // Перевіряємо що кімната існує і доступна
+    const room = await Room.findById(roomId);
+    if (!room) throw new AppError('Room not found', 404);
+    if (!room.available) throw new AppError('Room is not available', 400);
+
+    let booking;
     try {
-        return await Booking.create({
+        booking = await Booking.create({
             ...data,
             room: roomId,
             user: userId
@@ -19,6 +26,12 @@ exports.createBooking = async (data, roomId, userId) => {
         }
         throw err;
     }
+
+    // Позначаємо кімнату як недоступну
+    room.available = false;
+    await room.save();
+
+    return booking;
 };
 
 exports.deleteBooking = async (bookingId, currentUser) => {
@@ -32,6 +45,11 @@ exports.deleteBooking = async (bookingId, currentUser) => {
         throw new AppError('You do not have permission to delete this booking', 403);
     }
 
+    const roomId = booking.room; // зберігаємо до видалення
     await booking.deleteOne();
+
+    // Повертаємо кімнату в доступний стан після скасування бронювання
+    await Room.findByIdAndUpdate(roomId, { available: true });
+
     return booking;
 };

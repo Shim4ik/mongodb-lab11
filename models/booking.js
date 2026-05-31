@@ -34,4 +34,16 @@ const bookingSchema = new mongoose.Schema({
 // Один користувач — одне активне бронювання на кімнату
 bookingSchema.index({ room: 1, user: 1 }, { unique: true });
 
+// Після будь-якого видалення документа — повертаємо кімнату в доступний стан.
+// Спрацьовує і через код (deleteOne/findOneAndDelete) і через Compass/Atlas.
+bookingSchema.post('deleteOne', { document: true, query: false }, async function () {
+    await mongoose.model('Room').findByIdAndUpdate(this.room, { available: true });
+});
+
+bookingSchema.post('findOneAndDelete', async function (doc) {
+    if (doc) {
+        await mongoose.model('Room').findByIdAndUpdate(doc.room, { available: true });
+    }
+});
+
 module.exports = mongoose.model('Booking', bookingSchema);

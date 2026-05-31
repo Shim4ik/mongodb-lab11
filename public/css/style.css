@@ -156,16 +156,16 @@ body.auth-page {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse at 30% 70%, rgba(201,168,76,0.18) 0%, transparent 60%),
-    radial-gradient(ellipse at 80% 20%, rgba(201,168,76,0.10) 0%, transparent 50%);
+          radial-gradient(ellipse at 30% 70%, rgba(201,168,76,0.18) 0%, transparent 60%),
+          radial-gradient(ellipse at 80% 20%, rgba(201,168,76,0.10) 0%, transparent 50%);
 }
 
 .panel-lines {
   position: absolute;
   inset: 0;
   background-image:
-    repeating-linear-gradient(0deg, transparent, transparent 59px, rgba(201,168,76,0.06) 60px),
-    repeating-linear-gradient(90deg, transparent, transparent 59px, rgba(201,168,76,0.06) 60px);
+          repeating-linear-gradient(0deg, transparent, transparent 59px, rgba(201,168,76,0.06) 60px),
+          repeating-linear-gradient(90deg, transparent, transparent 59px, rgba(201,168,76,0.06) 60px);
 }
 
 .panel-content {
@@ -509,8 +509,8 @@ input::placeholder { color: #b0a898; }
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse at 80% 50%, rgba(201,168,76,0.12) 0%, transparent 55%),
-    repeating-linear-gradient(90deg, transparent, transparent 79px, rgba(201,168,76,0.04) 80px);
+          radial-gradient(ellipse at 80% 50%, rgba(201,168,76,0.12) 0%, transparent 55%),
+          repeating-linear-gradient(90deg, transparent, transparent 79px, rgba(201,168,76,0.04) 80px);
 }
 
 .hero-inner {
@@ -950,4 +950,24 @@ input::placeholder { color: #b0a898; }
   .rooms-grid { grid-template-columns: 1fr; }
 
   .panel { display: none; }
+}
+
+/* ── Booking button (room card) ── */
+.btn-book {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-family: 'Raleway', sans-serif;
+  font-weight: 500;
+  color: var(--gold);
+  border: 1px solid rgba(201,168,76,0.5);
+  padding: 5px 12px;
+  text-decoration: none;
+  background: transparent;
+  transition: background 0.2s, color 0.2s;
+  white-space: nowrap;
+}
+.btn-book:hover {
+  background: var(--gold);
+  color: var(--dark);
 }
