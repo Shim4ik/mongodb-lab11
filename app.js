@@ -60,6 +60,7 @@ app.use((req, res, next) => {
 
 // Централізований error handler — завжди останній
 app.use((err, req, res, next) => {
+  console.error(err);
   const statusCode = err.statusCode || 500;
   const message = err.isOperational ? err.message : 'Внутрішня помилка сервера';
   res.status(statusCode).json({
