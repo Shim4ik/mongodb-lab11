@@ -1,5 +1,5 @@
 const Booking = require('../models/booking');
-const Room = require('../models/room');
+const Room = require('../models/Room');
 const AppError = require('../utils/AppError');
 
 exports.getBookingsByRoom = async (roomId) => {

@@ -1,4 +1,4 @@
-const Room = require('../models/room');
+const Room = require('../models/Room');
 const AppError = require('../utils/AppError');
 
 exports.getAllRooms = async (query) => {
